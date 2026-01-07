@@ -32,7 +32,7 @@ The encoder is frozen, while the decoder is trained end-to-end.
 - Model has loss : .9042 and val_loss : 0.9877
 - The model is evaluated on the test split using **BLEU scores**.
 
-![BLEU Scores](Tests/bleu_score.png)
+![BLEU Scores](Tests/Bleu_score.png)
 
 ## Results
 ![Test 1](Tests/125272627.jpg_caption.png)
