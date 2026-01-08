@@ -29,7 +29,7 @@ The encoder is frozen, while the decoder is trained end-to-end.
 - 5 captions per image
 
 ## Evaluation
-- Model has loss : .9042 and val_loss : 0.9877
+- Model has loss : 0.9042 and val_loss : 0.9877
 - The model is evaluated on the test split using **BLEU scores**.
 
 ![BLEU Scores](Tests/Bleu_score.png)
