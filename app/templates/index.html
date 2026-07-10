@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Image Captioning</title>
+  <style>
+    :root {
+      --bg: #f5efe7;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #0f766e;
+      --accent-dark: #115e59;
+      --border: #e5e7eb;
+    }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #f5efe7 0%, #eef6f5 100%);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 840px;
+      margin: 0 auto;
+      padding: 48px 20px;
+    }
+    .hero {
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 2.2rem;
+    }
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+    }
+    .field {
+      margin-bottom: 16px;
+    }
+    input[type="file"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      background: #fafafa;
+    }
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 18px;
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:hover {
+      background: var(--accent-dark);
+    }
+    .result {
+      margin-top: 20px;
+      padding: 18px;
+      background: #f8fafc;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+    }
+    .preview {
+      margin-top: 16px;
+      max-width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    }
+    .error {
+      margin-top: 16px;
+      color: #b91c1c;
+      font-weight: 700;
+    }
+    .label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <h1>Image Captioning Demo</h1>
+      <p>Upload an image and the FastAPI app will generate a caption using the trained model.</p>
+    </div>
+
+    <div class="card">
+      <form action="/predict" method="post" enctype="multipart/form-data">
+        <div class="field">
+          <label class="label" for="image">Choose image</label>
+          <input id="image" name="image" type="file" accept="image/*" required>
+        </div>
+        <button type="submit">Generate Caption</button>
+      </form>
+
+      {% if error %}
+      <div class="error">{{ error }}</div>
+      {% endif %}
+
+      {% if caption %}
+      <div class="result">
+        <strong>Predicted caption:</strong>
+        <p>{{ caption }}</p>
+        {% if image_url %}
+        <img class="preview" src="{{ image_url }}" alt="Uploaded image">
+        {% endif %}
+        {% if image_name %}
+        <p><strong>Image:</strong> {{ image_name }}</p>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

@@ -3,7 +3,6 @@ import os
 import numpy as np
 from src.logger import logging
 import pandas as pd
-import tensorflow_hub as hub
 import pickle
 from tensorflow.keras.preprocessing.text import Tokenizer
 from sklearn.model_selection import train_test_split
@@ -30,6 +29,8 @@ VOCAB_SIZE = 10000
 def load_vit_model():
     """load vit model from tfhub"""
     try:
+        import tensorflow_hub as hub
+
         vit_url = "https://tfhub.dev/sayakpaul/vit_b16_fe/1"
         vit_model = hub.KerasLayer(vit_url, trainable=False, input_shape=(224, 224, 3))
         logging.info("VIT model loaded successfully from TensorFlow Hub.")
@@ -40,9 +41,11 @@ def load_vit_model():
 
 
 # cleaning caption
-def clean_caption(caption:pd.Series) -> pd.Series:
+def clean_caption(caption: str) -> str:
     """Cleans the caption by removing unwanted characters and formatting it."""
     try:
+        if not isinstance(caption, str):
+            raise TypeError("caption must be a string")
         cap = caption.lower().strip()
         if cap.startswith("startseq") and cap.endswith("endseq"):
             mid = cap[len("startseq"):-len("endseq")].strip()
@@ -57,9 +60,11 @@ def clean_caption(caption:pd.Series) -> pd.Series:
         raise
 
 # tokenization
-def tokenize_captions(caption: pd.Series) -> tuple:
+def tokenize_captions(caption: pd.DataFrame) -> tuple:
     """Tokenizes the captions and returns the tokenizer, vocabulary size, and maximum caption length."""
     try:
+        if "comment" not in caption.columns:
+            raise KeyError("caption dataframe must contain a 'comment' column")
         captions_list = caption['comment'].tolist()
         tokenizer = Tokenizer()
         tokenizer.fit_on_texts(captions_list)

@@ -8,3 +8,7 @@ tensorflow
 tensorflow-hub
 keras
 nltk
+fastapi
+uvicorn
+jinja2
+python-multipart

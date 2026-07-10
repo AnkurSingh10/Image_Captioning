@@ -1,0 +1,88 @@
+name: CI Pipeline
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  docker-build-test-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Smoke test container
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker run -d --name image-cap-ci -p 8000:8000 $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:8000/ > /dev/null; then
+              echo "App is up"
+              break
+            fi
+            sleep 5
+          done
+          curl -fsS http://127.0.0.1:8000/ > /dev/null
+          docker logs image-cap-ci
+          docker stop image-cap-ci
+
+      - name: Push Docker image to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+  deploy-to-ec2:
+    runs-on: ubuntu-latest
+    needs: docker-build-test-push
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploy latest image on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          envs: AWS_REGION,AWS_ACCOUNT_ID,ECR_REPOSITORY
+          script: |
+            set -e
+            ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+            IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+
+            aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+            docker pull "$IMAGE_URI"
+
+            docker rm -f image-cap-app || true
+            docker run -d --name image-cap-app --restart unless-stopped -p 80:8000 "$IMAGE_URI"
