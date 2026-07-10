@@ -1,32 +1,45 @@
 import os
+import sys
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import json
 from PIL import Image
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model
-from layers.Custom_layer_model import Transformer_decoder, Expand_Dimension, Masked_Loss, PositionalEmbedding
 from tensorflow import keras
 import textwrap
-from models.feature_engineering import load_vit_model
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from pickle import load
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from src.layers.Custom_layer_model import TransformerDecoder, ExpandDims, masked_loss, PositionalEmbedding
+from src.models.feature_engineering import load_vit_model
+
 vit_model = load_vit_model()
-model = load_model("caption_model.h5",
-                   custom_objects={"Transformer_decoder": Transformer_decoder,
-                                   "PositionalEmbedding": PositionalEmbedding,
-                                   "Masked_Loss": Masked_Loss})
+model = load_model(
+    PROJECT_ROOT / "data" / "caption_model.h5",
+    custom_objects={
+        "TransformerDecoder": TransformerDecoder,
+        "ExpandDims": ExpandDims ,
+        "PositionalEmbedding": PositionalEmbedding,
+        "masked_loss": masked_loss ,
+    },
+)
 
-test_df = pd.read_csv("data/test.csv")
+test_df = pd.read_csv(PROJECT_ROOT / "data" / "test.csv")
 
-with open("data/tokenizer.pkl", "rb") as f:
+with open(PROJECT_ROOT / "data" / "tokenizer.pkl", "rb") as f:
     tokenizer = load(f)
 
-with open("data/features.pkl", "rb") as f:
+with open(PROJECT_ROOT / "data" / "features.pkl", "rb") as f:
     features = load(f)
 
-with open("data/config.json", "r") as f:
+with open(PROJECT_ROOT / "data" / "config.json", "r") as f:
     config = json.load(f)
 
 VOCAB_SIZE = config["VOCAB_SIZE"]
@@ -49,6 +62,12 @@ def generate_caption(image_path, model, tokenizer, max_length):
         caption += ' ' + next_word
     return caption
 
+# image_url = PROJECT_ROOT / "data" / "img2.png"
+# new_caption = generate_caption(image_url, model, tokenizer,39 )
+# # new_caption = generate_caption("/kaggle/input/tttttttt/OIP (1).webp", model, tokenizer, max_len_gen)
+# print(new_caption.replace("startseq", "").replace("endseq", "").strip())
+# img = Image.open(image_url)
+# plt.imshow(img)
 def show_prediction(
     image_path,
     model,
@@ -106,7 +125,7 @@ def show_prediction(
     plt.show()
 
 
-image_url = "flickr30k_images/1007205537.jpg"
+image_url = PROJECT_ROOT / "data" / "Screenshot 2026-07-09 151414.png"
 show_prediction(
     image_url,
     model,

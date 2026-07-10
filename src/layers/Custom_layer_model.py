@@ -33,20 +33,20 @@ class PositionalEmbedding(keras.layers.Layer):
 
 
 @register_keras_serializable()
-class Transformer_decoder(keras.layers.Layer):
-    def __init__(self, embed_dimension, ff_dimension, num_heads, vocab_size, max_len, num_layers=4, rate=0.1,**kwargs ):
+class TransformerDecoder(keras.layers.Layer):
+    def __init__(self, embed_dim, ff_dim, num_heads, vocab_size, max_len, num_layers=4, rate=0.1,**kwargs ):
         super().__init__(**kwargs)
-        self.embed = PositionalEmbedding(max_len, vocab_size, embed_dimension)
+        self.embed = PositionalEmbedding(max_len, vocab_size, embed_dim)
         self.dec_layers = []
         for _ in range(num_layers):
             self.dec_layers.append({
-                'MHA1': MultiHeadAttention(num_heads=num_heads, key_dim=embed_dimension//num_heads),
+                'MHA1': MultiHeadAttention(num_heads=num_heads, key_dim=embed_dim//num_heads),
                 'LN1': LayerNormalization(epsilon=1e-6),
                 'drop1': Dropout(rate),
-                'FFN': keras.Sequential([Dense(ff_dimension, activation="relu"), Dense(embed_dimension)]),
+                'FFN': keras.Sequential([Dense(ff_dim, activation="relu"), Dense(embed_dim)]),
                 'LN2': LayerNormalization(epsilon=1e-6),
                 'drop2': Dropout(rate),
-                'MHA2': MultiHeadAttention(num_heads=num_heads, key_dim=embed_dimension//num_heads),
+                'MHA2': MultiHeadAttention(num_heads=num_heads, key_dim=embed_dim//num_heads),
                 'LN3': LayerNormalization(epsilon=1e-6),
                 'drop3': Dropout(rate)
             })
@@ -73,7 +73,7 @@ class Transformer_decoder(keras.layers.Layer):
 
 
 @register_keras_serializable()
-class Expand_Dimension(layers.Layer):
+class ExpandDims(layers.Layer):
     def __init__(self, axis=1, **kwargs):
         super().__init__(**kwargs)
         self.axis = axis
@@ -85,7 +85,7 @@ class Expand_Dimension(layers.Layer):
         return input_shape[:self.axis] + (1,) + input_shape[self.axis:]
 
 @register_keras_serializable()
-def Masked_Loss(y_true, y_pred):
+def masked_loss(y_true, y_pred):
     loss_func = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     mask = tf.cast(tf.not_equal(y_true, 0), tf.float32)
     loss = loss_func(y_true, y_pred)

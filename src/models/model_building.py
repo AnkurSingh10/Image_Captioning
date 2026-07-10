@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from layers.Custom_layer_model import Transformer_decoder, Expand_Dimension, Masked_Loss, PositionalEmbedding
+from layers.Custom_layer_model import TransformerDecoder, ExpandDims, masked_loss, PositionalEmbedding
 from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model, load_model
 from tensorflow import keras
@@ -45,8 +45,8 @@ def define_model(
     img_input = Input(shape=(768,), name="image_features")
     cap_input = Input(shape=(max_length-1,), name="caption_input")
     
-    img_emb = Expand_Dimension(name="image_context")(img_input)
-    decoder = Transformer_decoder(embed_dimension=embed_dimension, ff_dimension=ff_dimension, num_heads=num_heads,
+    img_emb = ExpandDims(name="image_context")(img_input)
+    decoder = TransformerDecoder(embed_dim=embed_dimension, ff_dim=ff_dimension, num_heads=num_heads,
                                  vocab_size=vocab_size, max_len=max_length-1,
                                  num_layers=num_layers, rate=0.1)
     
@@ -63,7 +63,7 @@ model = define_model(
 )
 
 #compile model
-model.compile(optimizer=keras.optimizers.Adam(learning_rate=3e-4), loss=Masked_Loss)
+model.compile(optimizer=keras.optimizers.Adam(learning_rate=3e-4), loss=masked_loss)
 
 # plot model architecture
 plot_model(
@@ -99,6 +99,6 @@ model.save("caption_model.h5")
 
 #load model
 model = load_model("caption_model.h5",
-                   custom_objects={"Transformer_decoder": Transformer_decoder,
+                   custom_objects={"TransformerDecoder": TransformerDecoder,
                                    "PositionalEmbedding": PositionalEmbedding,
-                                   "Masked_Loss": Masked_Loss})
+                                   "masked_loss": masked_loss})

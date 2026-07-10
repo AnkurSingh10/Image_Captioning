@@ -7,7 +7,7 @@ import json
 from PIL import Image
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model
-from layers.Custom_layer_model import Transformer_decoder, Expand_Dimension, Masked_Loss, PositionalEmbedding
+from layers.Custom_layer_model import TransformerDecoder, ExpandDims, masked_loss, PositionalEmbedding
 from tensorflow import keras
 import textwrap
 from models.feature_engineering import load_vit_model
@@ -18,9 +18,10 @@ from tqdm import tqdm
 
 
 model = load_model("caption_model.h5",
-                   custom_objects={"Transformer_decoder": Transformer_decoder,
+                   custom_objects={"TransformerDecoder": TransformerDecoder,
+                                   "ExpandDims": ExpandDims,
                                    "PositionalEmbedding": PositionalEmbedding,
-                                   "Masked_Loss": Masked_Loss})
+                                   "masked_loss": masked_loss})
 
 test_df = pd.read_csv("data/test.csv")
 
